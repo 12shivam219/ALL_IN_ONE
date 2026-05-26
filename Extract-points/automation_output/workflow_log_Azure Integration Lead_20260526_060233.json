@@ -1,0 +1,56 @@
+[
+  {
+    "timestamp": "2026-05-26T06:02:33.296550",
+    "step": "Input Validation",
+    "status": "START",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-05-26T06:02:33.297000",
+    "step": "Input Validation",
+    "status": "SUCCESS",
+    "details": "All inputs validated"
+  },
+  {
+    "timestamp": "2026-05-26T06:02:33.297286",
+    "step": "Resume Matching",
+    "status": "START",
+    "details": "Selecting resume for reviewed points..."
+  },
+  {
+    "timestamp": "2026-05-26T06:02:33.297634",
+    "step": "Resume Matching",
+    "status": "SUCCESS",
+    "details": "Match score: 14.3%"
+  },
+  {
+    "timestamp": "2026-05-26T06:02:33.297872",
+    "step": "Message Generation",
+    "status": "PROVIDED",
+    "details": "Using user-provided message"
+  },
+  {
+    "timestamp": "2026-05-26T06:02:33.298134",
+    "step": "Resume Injection",
+    "status": "START",
+    "details": "Injecting reviewed points into: Viswa_Java.docx"
+  },
+  {
+    "timestamp": "2026-05-26T06:02:33.441833",
+    "step": "Resume Injection",
+    "status": "SUCCESS",
+    "details": "Reviewed points successfully injected into resume"
+  },
+  {
+    "timestamp": "2026-05-26T06:02:33.444748",
+    "step": "Resume Saving",
+    "status": "SUCCESS",
+    "details": "Saved to: C:\\Users\\12shi\\OneDrive\\Desktop\\Daily-Work\\Extract-points\\automation_output\\Azure_Integration_Lead_Viswa_20260526_060233.docx"
+  },
+  {
+    "timestamp": "2026-05-26T06:02:33.445153",
+    "step": "Email Sending",
+    "status": "SKIPPED",
+    "details": "Email not configured"
+  }
+]

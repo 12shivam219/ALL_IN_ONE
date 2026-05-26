@@ -1,0 +1,92 @@
+[
+  {
+    "timestamp": "2026-05-26T09:27:43.589456",
+    "step": "Input Validation",
+    "status": "START",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-05-26T09:27:43.589713",
+    "step": "Input Validation",
+    "status": "SUCCESS",
+    "details": "All inputs validated"
+  },
+  {
+    "timestamp": "2026-05-26T09:27:43.589840",
+    "step": "Tech Stack Review",
+    "status": "START",
+    "details": "Using reviewed technologies..."
+  },
+  {
+    "timestamp": "2026-05-26T09:27:43.589960",
+    "step": "Tech Stack Review",
+    "status": "SUCCESS",
+    "details": "Using 6 technologies"
+  },
+  {
+    "timestamp": "2026-05-26T09:27:43.590058",
+    "step": "Resume Matching",
+    "status": "START",
+    "details": "Analyzing job technologies..."
+  },
+  {
+    "timestamp": "2026-05-26T09:27:43.590182",
+    "step": "Resume Matching",
+    "status": "SUCCESS",
+    "details": "Match score: 100.0%"
+  },
+  {
+    "timestamp": "2026-05-26T09:27:43.590292",
+    "step": "Message Generation",
+    "status": "PROVIDED",
+    "details": "Using user-provided message"
+  },
+  {
+    "timestamp": "2026-05-26T09:27:43.590382",
+    "step": "Points Generation",
+    "status": "START",
+    "details": "Generating 2 points per technology..."
+  },
+  {
+    "timestamp": "2026-05-26T09:27:46.407296",
+    "step": "Points Generation",
+    "status": "SUCCESS",
+    "details": "Generated 4268 characters of content"
+  },
+  {
+    "timestamp": "2026-05-26T09:27:46.407518",
+    "step": "Points Processing",
+    "status": "START",
+    "details": "Converting generated points to Cycle format (2 point(s) per technology per cycle)..."
+  },
+  {
+    "timestamp": "2026-05-26T09:27:46.409412",
+    "step": "Points Processing",
+    "status": "SUCCESS",
+    "details": "Points converted into 1 tech-based cycle(s)"
+  },
+  {
+    "timestamp": "2026-05-26T09:27:46.409523",
+    "step": "Resume Injection",
+    "status": "START",
+    "details": "Injecting points into: Viswa_Java.docx"
+  },
+  {
+    "timestamp": "2026-05-26T09:27:46.518323",
+    "step": "Resume Injection",
+    "status": "SUCCESS",
+    "details": "Points successfully injected into resume"
+  },
+  {
+    "timestamp": "2026-05-26T09:27:46.520201",
+    "step": "Resume Saving",
+    "status": "SUCCESS",
+    "details": "Saved to: C:\\Users\\12shi\\OneDrive\\Desktop\\Daily-Work\\Extract-points\\automation_output\\Azure_Integration_Lead_Viswa_20260526_092746.docx"
+  },
+  {
+    "timestamp": "2026-05-26T09:27:46.520400",
+    "step": "Email Sending",
+    "status": "SKIPPED",
+    "details": "Email not configured"
+  }
+]

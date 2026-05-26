@@ -1,0 +1,92 @@
+import io
+from docx import Document
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+import re
+
+class ExportHandler:
+    def __init__(self):
+        self.styles = getSampleStyleSheet()
+        self._setup_custom_styles()
+
+    def _setup_custom_styles(self):
+        """Setup custom paragraph styles for PDF generation."""
+        self.styles.add(ParagraphStyle(
+            name='CycleHeading',
+            parent=self.styles['Heading1'],
+            fontSize=14,
+            textColor='#000000',
+            spaceAfter=12,
+            spaceBefore=6
+        ))
+        self.styles.add(ParagraphStyle(
+            name='ContentText',
+            parent=self.styles['Normal'],
+            fontSize=11,
+            spaceAfter=6,
+            leading=14
+        ))
+    
+    def _sanitize_for_xml(self, text: str) -> str:
+        """Remove or escape XML-invalid characters for reportlab compatibility."""
+        if not text:
+            return text
+        text = re.sub(r'[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f-\x9f]', '', text)
+        return text
+
+    def generate_docx(self, content):
+        """Generate a DOCX file from the processed text."""
+        document = Document()
+        lines = content.split('\n')
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+
+            line = self._sanitize_for_xml(line)
+
+            if line.startswith('Cycle'):
+                document.add_heading(line, level=1)
+            else:
+                document.add_paragraph(line)
+
+        docx_file = io.BytesIO()
+        document.save(docx_file)
+        docx_file.seek(0)
+
+        return docx_file
+
+    def generate_pdf(self, content):
+        """Generate a PDF file from the processed text."""
+        pdf_file = io.BytesIO()
+        doc = SimpleDocTemplate(
+            pdf_file,
+            pagesize=letter,
+            rightMargin=50,
+            leftMargin=50,
+            topMargin=50,
+            bottomMargin=50
+        )
+
+        story = []
+        lines = content.split('\n')
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                story.append(Spacer(1, 0.1 * inch))
+                continue
+
+            line = self._sanitize_for_xml(line)
+            
+            if line.startswith('Cycle'):
+                story.append(Paragraph(line, self.styles['CycleHeading']))
+            else:
+                story.append(Paragraph(line, self.styles['ContentText']))
+
+        doc.build(story)
+        pdf_file.seek(0)
+        return pdf_file

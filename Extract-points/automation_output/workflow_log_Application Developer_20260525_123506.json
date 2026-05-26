@@ -1,0 +1,80 @@
+[
+  {
+    "timestamp": "2026-05-25T12:35:02.389047",
+    "step": "Input Validation",
+    "status": "START",
+    "details": ""
+  },
+  {
+    "timestamp": "2026-05-25T12:35:02.389401",
+    "step": "Input Validation",
+    "status": "SUCCESS",
+    "details": "\u2705 All inputs validated"
+  },
+  {
+    "timestamp": "2026-05-25T12:35:02.389619",
+    "step": "Resume Matching",
+    "status": "START",
+    "details": "Analyzing job description..."
+  },
+  {
+    "timestamp": "2026-05-25T12:35:03.146288",
+    "step": "Resume Matching",
+    "status": "SUCCESS",
+    "details": "Match score: 8.8%"
+  },
+  {
+    "timestamp": "2026-05-25T12:35:03.146511",
+    "step": "Message Generation",
+    "status": "PROVIDED",
+    "details": "Using user-provided message"
+  },
+  {
+    "timestamp": "2026-05-25T12:35:03.146638",
+    "step": "Points Generation",
+    "status": "START",
+    "details": "Generating 1 points per technology..."
+  },
+  {
+    "timestamp": "2026-05-25T12:35:05.771955",
+    "step": "Points Generation",
+    "status": "SUCCESS",
+    "details": "Generated 4290 characters of content"
+  },
+  {
+    "timestamp": "2026-05-25T12:35:05.772185",
+    "step": "Points Processing",
+    "status": "START",
+    "details": "Converting generated points to Cycle format..."
+  },
+  {
+    "timestamp": "2026-05-25T12:35:05.773882",
+    "step": "Points Processing",
+    "status": "SUCCESS",
+    "details": "Points converted to Cycle format (4133 chars)"
+  },
+  {
+    "timestamp": "2026-05-25T12:35:05.774015",
+    "step": "Resume Injection",
+    "status": "START",
+    "details": "Injecting points into: Viswa_Java.docx"
+  },
+  {
+    "timestamp": "2026-05-25T12:35:06.021119",
+    "step": "Resume Injection",
+    "status": "SUCCESS",
+    "details": "Points successfully injected into resume"
+  },
+  {
+    "timestamp": "2026-05-25T12:35:06.023329",
+    "step": "Resume Saving",
+    "status": "SUCCESS",
+    "details": "Saved to: C:\\Users\\12shi\\OneDrive\\Desktop\\Daily-Work\\Extract-points\\automation_output\\Application_Developer_Viswa_20260525_123506.docx"
+  },
+  {
+    "timestamp": "2026-05-25T12:35:06.023658",
+    "step": "Email Sending",
+    "status": "SKIPPED",
+    "details": "Email not configured"
+  }
+]

@@ -1,0 +1,58 @@
+{
+  "resumes": [
+    {
+      "name": "Viswa_Java.docx",
+      "path": "resumes/Viswa_Java.docx",
+      "source": "local",
+      "file_id": null,
+      "person_name": "Viswa",
+      "technologies": [
+        "Java"
+      ],
+      "job_roles": [],
+      "bookmarks": [
+        "KPMG_Responsibilities",
+        "CVS_Responsibilities",
+        "Harland_Responsibilities",
+        "First_Citizen_Responsibilities"
+      ],
+      "added_date": "2026-05-25"
+    },
+    {
+      "name": "Viswa_Node.docx",
+      "path": "resumes/Viswa_Node.docx",
+      "source": "local",
+      "file_id": null,
+      "person_name": "Viswa",
+      "technologies": [
+        "Node"
+      ],
+      "job_roles": [],
+      "bookmarks": [
+        "KPMG_Responsibilities",
+        "CVS_Responsibilities",
+        "Harland_Responsibilities",
+        "First_Citizen_Responsibilities"
+      ],
+      "added_date": "2026-05-25"
+    },
+    {
+      "name": "Viswa_PHP.docx",
+      "path": "resumes/Viswa_PHP.docx",
+      "source": "local",
+      "file_id": null,
+      "person_name": "Viswa",
+      "technologies": [
+        "PHP"
+      ],
+      "job_roles": [],
+      "bookmarks": [
+        "KPMG_Responsibilities",
+        "CVS_Responsibilities",
+        "Harland_Responsibilities",
+        "First_Citizen_Responsibilities"
+      ],
+      "added_date": "2026-05-26"
+    }
+  ]
+}
