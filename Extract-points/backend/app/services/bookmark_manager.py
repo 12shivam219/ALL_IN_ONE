@@ -27,7 +27,7 @@ class BookmarkManager:
     DEFAULT_SECTION_PATTERNS = {
         "PROFESSIONAL_EXPERIENCE": [
             "professional experience", "work experience", "experience", 
-            "employment history", "career experience", "responsibilities"
+            "employment history", "career experience"
         ],
         "PROFESSIONAL_SUMMARY": [
             "professional summary", "summary", "profile", "career summary", "objective"
@@ -271,16 +271,22 @@ class BookmarkManager:
                     
         return None
 
+    def _get_nonempty_paragraphs(self, doc) -> List[Tuple[int, any]]:
+        """Get list of (original_idx, paragraph) for all non-empty paragraphs."""
+        return [(idx, para) for idx, para in enumerate(doc.paragraphs) if para.text.strip()]
+
     def extract_bookmark_anchors(self, doc) -> List[Dict]:
-        """Extract bookmark positions and context from reference document."""
+        """Extract bookmark positions and context from reference document using non-empty paragraphs."""
         anchors = []
-        current_heading_text = ""
-        heading_index = -1
+        nonempty_paras = self._get_nonempty_paragraphs(doc)
         
-        for idx, para in enumerate(doc.paragraphs):
+        current_heading_nonempty_idx = -1
+        current_heading_text = ""
+        
+        for ne_idx, (orig_idx, para) in enumerate(nonempty_paras):
             if self._looks_like_heading(para):
                 current_heading_text = para.text.strip()
-                heading_index = idx
+                current_heading_nonempty_idx = ne_idx
                 
             for element in para._element.iter():
                 if 'bookmarkStart' in element.tag:
@@ -291,10 +297,10 @@ class BookmarkManager:
                                 name = attr_val
                                 break
                     if name:
-                        relative_offset = idx - heading_index if heading_index != -1 else idx
+                        relative_offset = ne_idx - current_heading_nonempty_idx if current_heading_nonempty_idx != -1 else ne_idx
                         anchors.append({
                             'name': name,
-                            'paragraph_index': idx,
+                            'paragraph_index': orig_idx,
                             'paragraph_text': para.text.strip(),
                             'heading_text': current_heading_text,
                             'relative_offset': relative_offset
@@ -346,7 +352,7 @@ class BookmarkManager:
         return list(set(patterns))
 
     def find_matching_paragraph(self, anchor: Dict, target_paragraphs, used_paragraphs: set) -> Tuple[any, int, str, int]:
-        """Find best equivalent paragraph in target document for a given bookmark."""
+        """Find best equivalent paragraph in target document for a given bookmark using non-empty paragraph offsets."""
         best_para = None
         best_score = 0
         best_reason = "no-match"
@@ -359,7 +365,12 @@ class BookmarkManager:
         normalized_anchor_heading = self._normalize(anchor_heading)
         normalized_anchor_text = self._normalize(anchor_text)
         
-        for idx, para in enumerate(target_paragraphs):
+        company_name = anchor_name.replace("_Responsibilities", "").replace("_", " ").lower()
+        
+        nonempty_paras = [(idx, para) for idx, para in enumerate(target_paragraphs) if para.text.strip()]
+        best_ne_idx = -1
+        
+        for ne_idx, (idx, para) in enumerate(nonempty_paras):
             if idx in used_paragraphs:
                 continue
                 
@@ -367,9 +378,6 @@ class BookmarkManager:
             reasons = []
             
             para_text = para.text.strip()
-            if not para_text:
-                continue
-                
             normalized_para_text = self._normalize(para_text)
             
             # 1. Section name match (+85)
@@ -379,7 +387,14 @@ class BookmarkManager:
                 reasons.append("section-name")
                 
             # 2. Reference heading match (+70)
-            if normalized_anchor_heading and normalized_para_text == normalized_anchor_heading:
+            heading_match = False
+            if normalized_anchor_heading:
+                if normalized_para_text == normalized_anchor_heading:
+                    heading_match = True
+                elif company_name in normalized_para_text and company_name in normalized_anchor_heading:
+                    heading_match = True
+                    
+            if heading_match:
                 score += 70
                 reasons.append("reference-heading")
                 
@@ -409,16 +424,22 @@ class BookmarkManager:
             if score > best_score:
                 best_score = score
                 best_para = para
+                best_ne_idx = ne_idx
                 best_reason = "+".join(reasons)
                 best_idx = idx
                 
-        if best_score >= 75 and anchor.get('relative_offset', 0) > 0:
-            offset_idx = best_idx + anchor['relative_offset']
-            if offset_idx < len(target_paragraphs):
-                if offset_idx not in used_paragraphs:
-                    best_para = target_paragraphs[offset_idx]
-                    best_idx = offset_idx
+        if best_score >= 70 and anchor.get('relative_offset', 0) > 0 and best_ne_idx != -1:
+            offset_ne_idx = best_ne_idx + anchor['relative_offset']
+            if offset_ne_idx < len(nonempty_paras):
+                target_orig_idx, target_para = nonempty_paras[offset_ne_idx]
+                if target_orig_idx not in used_paragraphs:
+                    best_para = target_para
+                    best_idx = target_orig_idx
                     best_reason += f"+offset({anchor['relative_offset']})"
+                else:
+                    logger.debug(f"Offset target index {target_orig_idx} already used.")
+            else:
+                logger.debug(f"Offset index {offset_ne_idx} out of range.")
                 
         if best_score < 45:
             return None, 0, "no-match", -1

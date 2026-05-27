@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useToastStore } from '../store/toastStore';
 import { apiClient } from '../api/client';
 import { 
@@ -22,8 +22,15 @@ export const EmailCampaign: React.FC = () => {
   
   // Message details
   const [recipientsInput, setRecipientsInput] = useState('');
-  const [validatedRecipients, setValidatedRecipients] = useState<string[]>([]);
   const [subject, setSubject] = useState('');
+
+  const validatedRecipients = recipientsInput
+    .split(/[\n,;]+/)
+    .map(e => e.trim())
+    .filter(e => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(e);
+    });
   const [body, setBody] = useState('');
   const [selectedResume, setSelectedResume] = useState('');
   const [catalogResumes, setCatalogResumes] = useState<{ name: string; source: string }[]>([]);
@@ -36,22 +43,22 @@ export const EmailCampaign: React.FC = () => {
 
   const { addToast } = useToastStore();
 
-  const fetchCatalog = async () => {
+  const fetchCatalog = useCallback(async () => {
     setFetchingCatalog(true);
     try {
       const res = await apiClient.get('/resume/catalog');
       setCatalogResumes(res.data);
-      if (res.data.length > 0 && !selectedResume) {
-        setSelectedResume(res.data[0].name);
+      if (res.data.length > 0) {
+        setSelectedResume(prev => prev || res.data[0].name);
       }
     } catch (error) {
       console.error(error);
     } finally {
       setFetchingCatalog(false);
     }
-  };
+  }, []);
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     setLoadingHistory(true);
     try {
       const res = await apiClient.get('/email/history');
@@ -61,25 +68,15 @@ export const EmailCampaign: React.FC = () => {
     } finally {
       setLoadingHistory(false);
     }
-  };
-
-  useEffect(() => {
-    fetchCatalog();
-    fetchHistory();
   }, []);
 
-  // Sync / validate email lists on key change
   useEffect(() => {
-    const emails = recipientsInput
-      .split(/[\n,;]+/)
-      .map(e => e.trim())
-      .filter(e => {
-        // Basic email validation regex
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(e);
-      });
-    setValidatedRecipients(emails);
-  }, [recipientsInput]);
+    const timer = setTimeout(() => {
+      fetchCatalog();
+      fetchHistory();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchCatalog, fetchHistory]);
 
   const handleSendEmails = async () => {
     if (validatedRecipients.length === 0) {
@@ -145,8 +142,9 @@ export const EmailCampaign: React.FC = () => {
       setTimeout(() => {
         fetchHistory();
       }, 3000);
-    } catch (error: any) {
-      addToast(error.response?.data?.detail || 'Failed to dispatch emails', 'error');
+    } catch (error) {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      addToast(apiError.response?.data?.detail || 'Failed to dispatch emails', 'error');
     } finally {
       setSending(false);
     }
@@ -158,7 +156,7 @@ export const EmailCampaign: React.FC = () => {
       await apiClient.delete('/email/history');
       setHistory([]);
       addToast('Logs history cleared successfully', 'success');
-    } catch (e) {
+    } catch {
       addToast('Failed to clear logs history', 'error');
     }
   };
@@ -191,7 +189,7 @@ export const EmailCampaign: React.FC = () => {
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email Provider</label>
                 <select
                   value={emailProvider}
-                  onChange={(e) => setEmailProvider(e.target.value as any)}
+                  onChange={(e) => setEmailProvider(e.target.value as 'gmail' | 'outlook' | 'sendgrid')}
                   className="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs bg-slate-50 dark:bg-slate-950 focus:outline-none"
                 >
                   <option value="gmail">Gmail SMTP</option>

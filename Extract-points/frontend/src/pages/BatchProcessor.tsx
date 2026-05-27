@@ -103,8 +103,9 @@ export const BatchProcessor: React.FC = () => {
 
       setResults(res.data.results);
       addToast(`Successfully processed ${res.data.results.length} documents!`, 'success');
-    } catch (error: any) {
-      addToast(error.response?.data?.detail || 'Batch processing failed', 'error');
+    } catch (error) {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      addToast(apiError.response?.data?.detail || 'Batch processing failed', 'error');
     } finally {
       setLoading(false);
     }
@@ -174,7 +175,7 @@ export const BatchProcessor: React.FC = () => {
       link.download = outName;
       link.click();
       window.URL.revokeObjectURL(link.href);
-    } catch (error) {
+    } catch {
       addToast(`Failed to export individual ${format.toUpperCase()}`, 'error');
     }
   };

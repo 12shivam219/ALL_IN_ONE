@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useToastStore } from '../store/toastStore';
 import { apiClient } from '../api/client';
 import { 
-  GitFork, Upload, Save, Download, AlertTriangle, FileText
+  GitFork, Upload, Save, Download, AlertTriangle, FileText, RefreshCw
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -36,18 +36,43 @@ export const ResumeInjector: React.FC = () => {
   
   const { addToast } = useToastStore();
 
-  const fetchProfiles = async () => {
+  const handleReset = () => {
+    setResumeFile(null);
+    setDetectedBookmarks([]);
+    setPointsText('');
+    setPointsFile(null);
+    setDetectedCycles(0);
+    setCustomMapping({});
+    setUnusedHandling('keep');
+    setProfileName('');
+    setSelectedProfile('');
+    setLastInjectedFileUrl(null);
+    setInjectionsSummary(null);
+    
+    // Reset file input elements if they exist
+    const docxInput = document.querySelector('input[accept=".docx"]') as HTMLInputElement;
+    if (docxInput) docxInput.value = '';
+    const txtInput = document.querySelector('input[accept=".txt"]') as HTMLInputElement;
+    if (txtInput) txtInput.value = '';
+    
+    addToast('All inputs cleared. Ready for next injection!', 'info');
+  };
+
+  const fetchProfiles = useCallback(async () => {
     try {
       const res = await apiClient.get('/resume/profiles');
       setProfiles(res.data);
     } catch (error) {
       console.error(error);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchProfiles();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchProfiles();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchProfiles]);
 
   // Detect bookmarks
   const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,8 +102,9 @@ export const ResumeInjector: React.FC = () => {
           mapping[idx + 1] = bm;
         });
         setCustomMapping(mapping);
-      } catch (error: any) {
-        addToast(error.response?.data?.detail || 'Failed to detect bookmarks', 'error');
+      } catch (error) {
+        const apiError = error as { response?: { data?: { detail?: string } } };
+        addToast(apiError.response?.data?.detail || 'Failed to detect bookmarks', 'error');
         setResumeFile(null);
       }
     }
@@ -87,8 +113,8 @@ export const ResumeInjector: React.FC = () => {
   // Run cycle extraction counts on paste/upload text
   useEffect(() => {
     const parseCycles = () => {
-      let textToParse = pointsText;
-      if (inputMethod === 'upload' && pointsFile) {
+      const textToParse = pointsText;
+      if (inputMethod === 'upload' && !pointsFile) {
         // Read file contents (async, we will handle in separate file select)
         return;
       }
@@ -98,17 +124,19 @@ export const ResumeInjector: React.FC = () => {
       setDetectedCycles(uniqueCycleNums.length);
       
       // Auto mapping for cycles that match indices
-      const mapping: Record<number, string> = { ...customMapping };
-      uniqueCycleNums.forEach(num => {
-        if (!mapping[num] && detectedBookmarks.length >= num) {
-          mapping[num] = detectedBookmarks[num - 1];
-        }
+      setCustomMapping(prev => {
+        const mapping: Record<number, string> = { ...prev };
+        uniqueCycleNums.forEach(num => {
+          if (!mapping[num] && detectedBookmarks.length >= num) {
+            mapping[num] = detectedBookmarks[num - 1];
+          }
+        });
+        return mapping;
       });
-      setCustomMapping(mapping);
     };
     
     parseCycles();
-  }, [pointsText, detectedBookmarks, inputMethod]);
+  }, [pointsText, detectedBookmarks, inputMethod, pointsFile]);
 
   const handlePointsFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -137,7 +165,7 @@ export const ResumeInjector: React.FC = () => {
       });
       setCustomMapping(mapping);
       addToast(`Loaded profile layout: ${profileName}`, 'success');
-    } catch (e) {
+    } catch {
       addToast('Failed to load profile mapping', 'error');
     }
   };
@@ -164,7 +192,7 @@ export const ResumeInjector: React.FC = () => {
       addToast(`Profile layout '${profileName}' saved successfully!`, 'success');
       setProfileName('');
       fetchProfiles();
-    } catch (error) {
+    } catch {
       addToast('Failed to save profile mapping', 'error');
     }
   };
@@ -211,8 +239,9 @@ export const ResumeInjector: React.FC = () => {
       const downloadUrl = window.URL.createObjectURL(blob);
       setLastInjectedFileUrl(downloadUrl);
       addToast('Points injected successfully! Word file is ready for download.', 'success');
-    } catch (error: any) {
-      addToast(error.response?.data?.detail || 'Failed to inject points', 'error');
+    } catch (error) {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      addToast(apiError.response?.data?.detail || 'Failed to inject points', 'error');
     } finally {
       setInjecting(false);
     }
@@ -232,6 +261,28 @@ export const ResumeInjector: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Description header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="space-y-1">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <GitFork className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <span>Single Resume Injector</span>
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Inject custom bullet points into specific bookmarks of your Word resume template.
+          </p>
+        </div>
+        {(resumeFile || pointsText || lastInjectedFileUrl) && (
+          <button
+            onClick={handleReset}
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-rose-200 hover:bg-rose-50 text-rose-600 dark:border-rose-900/50 dark:hover:bg-rose-950/20 dark:text-rose-455 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Reset Injector</span>
+          </button>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Templates Upload and Bookmark Detection */}
         <div className="lg:col-span-2 space-y-6">

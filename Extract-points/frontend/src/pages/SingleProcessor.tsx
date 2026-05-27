@@ -65,8 +65,9 @@ Heading 3
       } else {
         addToast('Text processed successfully!', 'success');
       }
-    } catch (error: any) {
-      addToast(error.response?.data?.detail || 'Failed to process text', 'error');
+    } catch (error) {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      addToast(apiError.response?.data?.detail || 'Failed to process text', 'error');
     } finally {
       setLoading(false);
     }

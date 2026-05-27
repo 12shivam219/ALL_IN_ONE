@@ -43,8 +43,9 @@ export const Login: React.FC = () => {
         setIsLogin(true);
         setPassword('');
       }
-    } catch (error: any) {
-      const errMsg = error.response?.data?.detail || 'Authentication failed. Please try again.';
+    } catch (error) {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      const errMsg = apiError.response?.data?.detail || 'Authentication failed. Please try again.';
       addToast(errMsg, 'error');
     } finally {
       setLoading(false);

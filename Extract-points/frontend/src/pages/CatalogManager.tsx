@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { apiClient } from '../api/client';
 import { useToastStore } from '../store/toastStore';
 import { 
@@ -33,7 +33,7 @@ export const CatalogManager: React.FC = () => {
   
   const { addToast } = useToastStore();
 
-  const fetchCatalog = async () => {
+  const fetchCatalog = useCallback(async () => {
     setLoading(true);
     try {
       const res = await apiClient.get('/resume/catalog');
@@ -44,11 +44,14 @@ export const CatalogManager: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [addToast]);
 
   useEffect(() => {
-    fetchCatalog();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchCatalog();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchCatalog]);
 
   const handleDelete = async (name: string) => {
     if (!window.confirm(`Are you sure you want to remove ${name} from the catalog?`)) return;
@@ -56,8 +59,9 @@ export const CatalogManager: React.FC = () => {
       await apiClient.delete(`/resume/catalog/${name}`);
       addToast('Resume removed from catalog successfully', 'success');
       setResumes(prev => prev.filter(r => r.name !== name));
-    } catch (error: any) {
-      addToast(error.response?.data?.detail || 'Failed to delete resume', 'error');
+    } catch (error) {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      addToast(apiError.response?.data?.detail || 'Failed to delete resume', 'error');
     }
   };
 
@@ -90,8 +94,9 @@ export const CatalogManager: React.FC = () => {
       addToast(res.data.message || 'File uploaded and registered successfully!', 'success');
       setUploadModalOpen(false);
       fetchCatalog();
-    } catch (error: any) {
-      addToast(error.response?.data?.detail || 'File upload failed', 'error');
+    } catch (error) {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      addToast(apiError.response?.data?.detail || 'File upload failed', 'error');
     } finally {
       setUploading(false);
     }

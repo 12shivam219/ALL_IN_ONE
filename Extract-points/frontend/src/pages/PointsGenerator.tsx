@@ -32,8 +32,9 @@ export const PointsGenerator: React.FC = () => {
       });
       setExtractedTechs(response.data.technologies);
       addToast(`Extracted ${response.data.technologies.length} key technologies!`, 'success');
-    } catch (error: any) {
-      addToast(error.response?.data?.detail || 'Failed to extract technologies', 'error');
+    } catch (error) {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      addToast(apiError.response?.data?.detail || 'Failed to extract technologies', 'error');
     } finally {
       setExtracting(false);
     }
@@ -76,8 +77,9 @@ export const PointsGenerator: React.FC = () => {
       });
       setGeneratedResult(response.data.generated_text);
       addToast('AI Bullet points generated successfully!', 'success');
-    } catch (error: any) {
-      addToast(error.response?.data?.detail || 'Failed to generate points', 'error');
+    } catch (error) {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      addToast(apiError.response?.data?.detail || 'Failed to generate points', 'error');
     } finally {
       setGenerating(false);
     }

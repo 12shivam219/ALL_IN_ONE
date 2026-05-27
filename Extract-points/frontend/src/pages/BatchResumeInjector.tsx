@@ -1,9 +1,62 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useToastStore } from '../store/toastStore';
 import { apiClient } from '../api/client';
 import { 
   FolderHeart, Upload, Download, Trash2, ArrowRight, AlertCircle, RefreshCw
 } from 'lucide-react';
+
+const getAutoMapping = (resumes: File[], texts: File[], currentMapping: Record<string, string>) => {
+  const newMapping: Record<string, string> = { ...currentMapping };
+  
+  texts.forEach(txtFile => {
+    // If already mapped and still valid, keep it
+    if (newMapping[txtFile.name] && resumes.some(r => r.name === newMapping[txtFile.name])) {
+      return;
+    }
+
+    // Try automatic mapping based on name overlap
+    const txtBase = txtFile.name.toLowerCase().replace('_points', '').replace('.txt', '');
+    let bestMatch = '';
+    let bestOverlap = 0;
+
+    resumes.forEach(docxFile => {
+      const docxBase = docxFile.name.toLowerCase().replace('_resume', '').replace('.docx', '');
+      
+      // Check if one base contains the other or vice-versa
+      if (docxBase.includes(txtBase) || txtBase.includes(docxBase)) {
+        const overlapLength = Math.min(docxBase.length, txtBase.length);
+        if (overlapLength > bestOverlap) {
+          bestOverlap = overlapLength;
+          bestMatch = docxFile.name;
+        }
+      }
+    });
+
+    // Default fallback if overlapping is not found: match by index
+    if (!bestMatch && resumes.length > 0) {
+      // Find if there is a match by index
+      const idx = texts.indexOf(txtFile);
+      if (idx < resumes.length) {
+        bestMatch = resumes[idx].name;
+      } else {
+        bestMatch = resumes[0].name;
+      }
+    }
+
+    if (bestMatch) {
+      newMapping[txtFile.name] = bestMatch;
+    }
+  });
+
+  // Clean up mapping keys that are no longer in textFiles
+  Object.keys(newMapping).forEach(k => {
+    if (!texts.some(t => t.name === k)) {
+      delete newMapping[k];
+    }
+  });
+
+  return newMapping;
+};
 
 export const BatchResumeInjector: React.FC = () => {
   const [resumeFiles, setResumeFiles] = useState<File[]>([]);
@@ -30,6 +83,7 @@ export const BatchResumeInjector: React.FC = () => {
             unique.push(file);
           }
         });
+        setMapping(curr => getAutoMapping(unique, textFiles, curr));
         return unique;
       });
       setZipDownloadUrl(null);
@@ -51,66 +105,13 @@ export const BatchResumeInjector: React.FC = () => {
             unique.push(file);
           }
         });
+        setMapping(curr => getAutoMapping(resumeFiles, unique, curr));
         return unique;
       });
       setZipDownloadUrl(null);
       setErrorsSummary(null);
     }
   };
-
-  // Perform auto-mapping when files change
-  useEffect(() => {
-    const newMapping: Record<string, string> = { ...mapping };
-    
-    textFiles.forEach(txtFile => {
-      // If already mapped and still valid, keep it
-      if (newMapping[txtFile.name] && resumeFiles.some(r => r.name === newMapping[txtFile.name])) {
-        return;
-      }
-
-      // Try automatic mapping based on name overlap
-      const txtBase = txtFile.name.toLowerCase().replace('_points', '').replace('.txt', '');
-      let bestMatch = '';
-      let bestOverlap = 0;
-
-      resumeFiles.forEach(docxFile => {
-        const docxBase = docxFile.name.toLowerCase().replace('_resume', '').replace('.docx', '');
-        
-        // Check if one base contains the other or vice-versa
-        if (docxBase.includes(txtBase) || txtBase.includes(docxBase)) {
-          const overlapLength = Math.min(docxBase.length, txtBase.length);
-          if (overlapLength > bestOverlap) {
-            bestOverlap = overlapLength;
-            bestMatch = docxFile.name;
-          }
-        }
-      });
-
-      // Default fallback if overlapping is not found: match by index
-      if (!bestMatch && resumeFiles.length > 0) {
-        // Find if there is a match by index
-        const idx = textFiles.indexOf(txtFile);
-        if (idx < resumeFiles.length) {
-          bestMatch = resumeFiles[idx].name;
-        } else {
-          bestMatch = resumeFiles[0].name;
-        }
-      }
-
-      if (bestMatch) {
-        newMapping[txtFile.name] = bestMatch;
-      }
-    });
-
-    // Clean up mapping keys that are no longer in textFiles
-    Object.keys(newMapping).forEach(k => {
-      if (!textFiles.some(t => t.name === k)) {
-        delete newMapping[k];
-      }
-    });
-
-    setMapping(newMapping);
-  }, [resumeFiles, textFiles]);
 
   const handlePairChange = (txtFilename: string, docxFilename: string) => {
     setMapping(prev => ({
@@ -120,11 +121,19 @@ export const BatchResumeInjector: React.FC = () => {
   };
 
   const removeResume = (name: string) => {
-    setResumeFiles(prev => prev.filter(f => f.name !== name));
+    setResumeFiles(prev => {
+      const filtered = prev.filter(f => f.name !== name);
+      setMapping(curr => getAutoMapping(filtered, textFiles, curr));
+      return filtered;
+    });
   };
 
   const removeText = (name: string) => {
-    setTextFiles(prev => prev.filter(f => f.name !== name));
+    setTextFiles(prev => {
+      const filtered = prev.filter(f => f.name !== name);
+      setMapping(curr => getAutoMapping(resumeFiles, filtered, curr));
+      return filtered;
+    });
   };
 
   const handleBatchInject = async () => {
@@ -170,8 +179,9 @@ export const BatchResumeInjector: React.FC = () => {
       const downloadUrl = window.URL.createObjectURL(blob);
       setZipDownloadUrl(downloadUrl);
       addToast('Batch points injected successfully! Zipped bundle is ready for download.', 'success');
-    } catch (error: any) {
-      addToast(error.response?.data?.detail || 'Failed to execute batch injection', 'error');
+    } catch (error) {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      addToast(apiError.response?.data?.detail || 'Failed to execute batch injection', 'error');
     } finally {
       setInjecting(false);
     }

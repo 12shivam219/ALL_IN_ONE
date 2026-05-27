@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useToastStore } from '../store/toastStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { apiClient } from '../api/client';
@@ -63,18 +63,21 @@ export const CompleteAutomation: React.FC = () => {
   const { addToast } = useToastStore();
   const { pointsPerCycle, setPointsPerCycle } = useSettingsStore();
 
-  const fetchCatalog = async () => {
+  const fetchCatalog = useCallback(async () => {
     try {
       const res = await apiClient.get('/resume/catalog');
       setCatalogResumes(res.data);
     } catch (e) {
       console.error(e);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchCatalog();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchCatalog();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchCatalog]);
 
   const clearPreparedReview = () => {
     setPreparedReview(null);
@@ -165,8 +168,9 @@ export const CompleteAutomation: React.FC = () => {
       setActiveStep(2);
       setLogs(resData.logs || []);
       addToast('Tech stacks extracted. Review them before generating points.', 'success');
-    } catch (error: any) {
-      const errDetail = error.response?.data?.detail;
+    } catch (error) {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      const errDetail = apiError.response?.data?.detail;
       const msg = typeof errDetail === 'string' ? errDetail : errDetail || 'Failed to prepare automation';
       setActiveStep(0);
       addToast(msg, 'error');
@@ -201,8 +205,9 @@ export const CompleteAutomation: React.FC = () => {
       setActiveStep(4);
       setLogs(resData.logs || []);
       addToast('Points generated. Review cycle text before injection.', 'success');
-    } catch (error: any) {
-      const errDetail = error.response?.data?.detail;
+    } catch (error) {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      const errDetail = apiError.response?.data?.detail;
       const msg = typeof errDetail === 'string' ? errDetail : errDetail || 'Point generation encountered an error';
       setActiveStep(0);
       addToast(msg, 'error');
@@ -270,9 +275,10 @@ export const CompleteAutomation: React.FC = () => {
       setActiveStep(7);
       setLogs(resData.logs || []);
       addToast('One-click Recruiter pipeline completed successfully!', 'success');
-    } catch (error: any) {
+    } catch (error) {
       clearInterval(logInterval);
-      const errDetail = error.response?.data?.detail;
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      const errDetail = apiError.response?.data?.detail;
       const msg = typeof errDetail === 'string' ? errDetail : errDetail || 'Automation execution encountered an error';
       
       setActiveStep(0);
